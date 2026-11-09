@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  phone     String?
+  role      Role      @default(CUSTOMER)
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+  reviews   Review[]
+}
+
+model Car {
+  id           Int       @id @default(autoincrement())
+  name         String
+  brand        String
+  model        String
+  year         Int
+  city         String
+  type         String
+  transmission String
+  fuel         String
+  seats        Int
+  pricePerDay  Int
+  images       Json
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+  reviews      Review[]
+
+  @@index([city, type, pricePerDay])
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  userId     Int
+  carId      Int
+  startDate  DateTime
+  endDate    DateTime
+  totalPrice Int
+  status     BookingStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  user       User          @relation(fields: [userId], references: [id])
+  car        Car           @relation(fields: [carId], references: [id])
+  payment    Payment?
+
+  @@index([carId, startDate, endDate])
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @unique
+  amount    Int
+  method    String
+  status    String   @default("PENDING")
+  reference String?
+  createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  carId     Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  car       Car      @relation(fields: [carId], references: [id])
+}
